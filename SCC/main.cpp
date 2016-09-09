@@ -3,19 +3,19 @@
 #include<sstream>
 #include<list>
 #include<vector>
-
+#include<algorithm>
 using namespace std;
 
 vector< list<int> > ReverseGraph(vector< list<int> >& G, int n)
 {
-	vector< list<int> > Gt(n);
+	vector< list<int> > Grev(n);
 	for (int i = 0; i < n; i++)
 		for (list<int>::iterator it = G[i].begin(); it != G[i].end(); it++)
 		{
-			Gt[*it].push_back(i);
+			Grev[*it].push_back(i);
 		}
 
-	return Gt;
+	return Grev;
 }
 
 void FirstDFS(vector< list<int> >& G, vector<int>& F, vector<bool>& E, int start, int& nodes_processed)
@@ -30,31 +30,69 @@ void FirstDFS(vector< list<int> >& G, vector<int>& F, vector<bool>& E, int start
 	}
 	
 	nodes_processed++;
-	F[start] = nodes_processed;
+	F[nodes_processed] = start;
 }
 
-void FirstDFSLoop(vector< list<int> >& G, vector<int>& F, vector<bool>& E, int n)
+void FirstDFSLoop(vector< list<int> >& G, vector<int>& F, int n)
 {
-	int nodes_processed = 0;
+	vector<bool> Explored(n, false);
+	int nodes_processed = -1;
 	for (int start = n - 1; start >= 0; start--)
 	{
-		if (E[start] == false)
+		if (Explored[start] == false)
 		{
-			FirstDFS(G, F, E, start, nodes_processed);
+			FirstDFS(G, F, Explored, start, nodes_processed);
 		}
 	}
 }
 
-void SCC(vector< list<int> >& G)
+void SecondDFS(vector< list<int> >& G, vector<int>& F, vector<bool>& E, vector<int>& L, int s, int node)
+{
+	E[node] = true;
+	L[node] = s;
+	for (list<int>::iterator it = G[node].begin(); it != G[node].end(); it++)
+	{
+		if (E[*it] == false)
+		{
+			SecondDFS(G, F, E, L, s, *it);
+		}
+	}
+}
+
+void SecondDFSLoop(vector< list<int> >& G, vector<int>& F, vector<int>& L, int n)
+{
+	vector<bool> Explored(n, false);
+	int s;
+	for (int i = n - 1; i >= 0; i--)
+	{
+		if (Explored[F[i]] == false)
+		{
+			s = F[i];
+			SecondDFS(G, F, Explored, L, s, F[i]);
+		}
+	}
+}
+
+vector<int> SCC(vector< list<int> >& G)
 {
 	int n = G.size();
 	vector<int> Leaders(n);
 	vector<int> Finish(n);
-	vector<bool> Explored(n, false);
 	vector< list<int> > Grev = ReverseGraph(G, n);
 	
-	FirstDFSLoop(Grev, Finish, Explored, n);
-	int stop = 0;
+	FirstDFSLoop(Grev, Finish, n);
+	SecondDFSLoop(G, Finish, Leaders, n);
+	
+	vector<int> CountLeaders(n,0);
+
+	for (int i = 0; i < n; i++)
+	{
+		CountLeaders[Leaders[i]]++;
+	}
+	
+	sort(CountLeaders.begin(), CountLeaders.end());
+
+	return CountLeaders;
 }
 
 int main()
@@ -68,6 +106,7 @@ int main()
 	cin.ignore();
 
 	vector< list<int> > graph(n);
+	vector<int> scc_result;
 
 	while (getline(cin, line))
 	{
@@ -80,7 +119,16 @@ int main()
 		graph[tail].push_back(head);
 	}
 
-	SCC(graph);
+	scc_result = SCC(graph);
+
+	for (int i = n-1; i >= 0; i--)
+	{
+		if (scc_result[i] == 0)
+		{
+			break;
+		}
+		cout << scc_result[i]<<",";
+	}
 
 	return 0;
 }
