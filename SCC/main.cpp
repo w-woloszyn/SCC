@@ -121,7 +121,7 @@ int main()
 
 	scc_result = SCC(graph);
 
-	for (int i = n-1; i >= 0; i--)
+	for (int i = n-1; i >= n-10; i--)
 	{
 		if (scc_result[i] == 0)
 		{
